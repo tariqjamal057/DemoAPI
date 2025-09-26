@@ -1,8 +1,10 @@
 import os
 import secrets
 
-from fastapi import Depends, FastAPI, Form, Header, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, Form, Header, HTTPException, UploadFile, Query
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
+from io import BytesIO
+import zipfile
 from pydantic import BaseModel
 from sqlalchemy import Column, ForeignKey, Integer, LargeBinary, String, create_engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
@@ -105,9 +107,56 @@ def upload_document(
 
 
 @app.get("/document/{account_id}")
-def get_documents(account_id: str, db=Depends(get_db)):
+def get_documents(
+    account_id: str,
+    download_all: bool = Query(
+        False,
+        description="Set to true to download all documents as a zip file and if false it will download the latest document only",
+    ),
+    db=Depends(get_db),
+):
     docs = db.query(Document).filter(Document.account_id == account_id).all()
-    return [
-        {"filename": d.filename, "business": d.business.name, "document_id": d.id}
-        for d in docs
-    ]
+    if not docs:
+        raise HTTPException(
+            status_code=404, detail="No documents found for this account"
+        )
+
+    if download_all:
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for doc in docs:
+                file_path = os.path.join("uploads", doc.filename)
+                if os.path.exists(file_path):
+                    zip_file.write(file_path, doc.filename)
+                else:
+                    zip_file.writestr(doc.filename, doc.content)
+
+        zip_buffer.seek(0)
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f"attachment; filename={account_id}_documents.zip"
+            },
+        )
+    else:
+        doc = (
+            db.query(Document)
+            .filter(Document.account_id == account_id)
+            .order_by(Document.id.desc())
+            .first()
+        )
+        if not doc:
+            raise HTTPException(
+                status_code=404, detail="No documents found for this account"
+            )
+
+        file_path = os.path.join("uploads", doc.filename)
+        if os.path.exists(file_path):
+            return FileResponse(file_path, filename=doc.filename)
+        else:
+            return StreamingResponse(
+                BytesIO(doc.content),
+                media_type="application/octet-stream",
+                headers={"Content-Disposition": f"attachment; filename={doc.filename}"},
+            )
