@@ -3,6 +3,7 @@ __pycache__/
 
 # database file
 data.db 
+*.db
 
 # upload directory
 uploads/
