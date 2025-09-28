@@ -13,6 +13,7 @@ from fastapi import (
     Query,
     Request,
 )
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from io import BytesIO
 import zipfile
@@ -71,6 +72,22 @@ async def log_and_rate_limit(request: Request, call_next):
     process_time = time.time() - start_time
     logger.info(f"Response time: {process_time}s")
     return response
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422, content={"detail": exc.errors(), "message": "Validation error"}
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"message": "Something went wrong, please try again later"},
+    )
 
 
 def get_db():
