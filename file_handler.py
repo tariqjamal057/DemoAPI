@@ -1,15 +1,17 @@
-import os
 import io
+import os
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
+
 import boto3
-from botocore.exceptions import ClientError
 import cloudinary
-import cloudinary.uploader
 import cloudinary.api
+import cloudinary.uploader
 import cloudinary.utils
-from fastapi import UploadFile
 import requests
+from botocore.exceptions import ClientError
+from fastapi import UploadFile
+
 from settings import Settings
 
 
