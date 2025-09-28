@@ -6,3 +6,6 @@ data.db
 
 # upload directory
 uploads/
+
+# env file 
+.env
