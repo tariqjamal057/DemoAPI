@@ -1,0 +1,9 @@
+export { default as Hero } from "./hero/Hero";
+export { default as Features } from "./features/Features";
+export { default as Process } from "./process/process";
+export { default as WhyBuyFromUs } from "./WhyBuyFromUs/WhyBuyFromUs";
+export { default as AutobonComparisonSection } from "./AutobonComparisonSection/AutobonComparisonSection";
+export { default as AutobonInstantOffer } from "./AutobonInstantOffer/AutobonInstantOffer";
+export { default as WhySellWithAutobon } from "./WhySellWithAutobon/WhySellWithAutobon";
+export { default as ExploreCars } from "./ExploreCars/ExploreCars";
+export { default as Reviews } from "./Reviews/Reviews";
